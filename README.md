@@ -1,62 +1,36 @@
-# Simple Wikipedia XML Search Engine
+# Simple Title Indexer
 
-This project is a simple, two-phase search engine for Wikipedia XML dumps. It consists of:
-
-1.  **`phase_1_create_index.py`**: An indexer that parses a Wikipedia XML dump and builds a set of inverted index files.
-2.  **`phase_1_search.py`**: A searcher that takes user queries, searches the index, and returns matching document titles.
+This is a Python script designed to process a Wikipedia XML file and extract information from `<title>` tags. It cleans the titles, removes common stop words, and builds an in-memory index.
 
 ## Features
 
-* Parses large Wikipedia XML dumps efficiently using `iterparse`.
-* Builds separate inverted indexes for four fields: **Title**, **Body**, **Category**, and **Infobox**.
-* Uses NLTK's `SnowballStemmer` for word stemming.
-* Supports both:
-    * **Non-fielded search** (e.g., `olympic games`)
-    * **Fielded search** (e.g., `t:greece c:mythology`)
-* Returns the top 10 matching document titles for a query.
-
-## Requirements
-
-* Python 3
-* NLTK: `pip install nltk`
-* A Wikipedia XML dump file (e.g., `enwiki-latest-pages-articles.xml`)
-* A stop-word file named `stop_words.txt` in the same directory.
-    * **Important:** Words in this file must be comma-separated and individually quoted (e.g., `"a","the","is","in"`).
+* **Title Preprocessing:** Reads an XML file, finds all `<title>` tags, and tokenizes the text.
+* **Text Cleaning:** Removes stop words (using NLTK) and tokens shorter than 3 characters.
+* **File Output:** Creates a `title.txt` file containing one cleaned title per line.
+* **In-Memory Index:**
+    * `build_title_dict()`: Counts the total frequency of every word across all titles.
+    * `build_posting_list()`: Creates a simple posting list for title words, recording the document number, word frequency, and file position.
 
 ## How to Use
 
-### Step 1: Create the Index
+This script is set up to run in an environment like Google Colab or a Jupyter Notebook.
 
-Run the `phase_1_create_index.py` script, providing the path to your Wikipedia dump and a directory to store the index files.
-
-```bash
-# Usage: python phase_1_create_index.py <path_to_wiki.xml> <path_to_index_dir>
-
-# Example:
-mkdir ./my_index
-python phase_1_create_index.py /data/enwiki.xml ./my_index
-```
-
-This will create several files in the `./my_index` directory, including `title.txt`, `body_text.txt`, `word_position.pickle`, and `title_doc_no.pickle`.
-
-### Step 2: Search the Index
-
-1.  Create a query file (e.g., `queries.txt`) with one query per line.
-
-    **`queries.txt` example:**
+1.  **Upload Files:** You must upload your Wikipedia XML file.
+2.  **Install NLTK:** Make sure you have NLTK installed (`pip install nltk`).
+3.  **Update Filename:** Change this line in the script to match the name of your XML file:
+    ```python
+    preprocess_titles("enwiki-latest-pages-articles26.xml-p42567204p42663461")
     ```
-    t:greece
-    olympic games
-    body:zeus c:mythology
-    ```
+4.  **Run:** Execute the entire script. It will:
+    * Download NLTK stopwords.
+    * Create the `title.txt` file.
+    * Create the `title_dict` and `posting_list` variables in memory.
 
-2.  Run the `phase_1_search.py` script, providing the path to your index, your query file, and an output file for the results.
+## ⚠️ Important Limitations
 
-```bash
-# Usage: python phase_1_search.py <path_to_index_dir> <path_to_queries.txt> <path_to_output.txt>
+This script has several major limitations and **will not work** on a full Wikipedia dump.
 
-# Example:
-python phase_1_search.py ./my_index ./queries.txt ./results.txt
-```
-
-The script will print the time taken for each query and write the matching document titles to `results.txt`.
+1.  **Fatal Memory Error:** The `preprocess_titles` function uses `f.readlines()`, which tries to load the **entire XML file into computer memory**. This will crash your computer or notebook if the file is large. It will only work on very small sample XML files.
+2.  **Incomplete:** The script **only processes `<title>` tags**. The functions for processing the body text, categories, or infoboxes (`clean_text`, `build_content_dict`, etc.) are empty.
+3.  **No Stemming:** The script does not perform stemming, so "run" and "running" are treated as two different words.
+4.  **Simple Tokenization:** It splits titles using `title.split()`, which is not very robust and can handle punctuation or complex names incorrectly.
